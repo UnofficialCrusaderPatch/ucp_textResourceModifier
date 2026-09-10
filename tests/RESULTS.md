@@ -68,22 +68,22 @@ Legacy-option or current-AI-Swapper-version native compatibility.
 
 Before: released 0.3.0, German disjoint entries already compose correctly.
 
-![Released German composition](evidence/baseline-de-b.png)
+![Released German composition](evidence/baseline-de-b.jpg)
 
 After: final DLL, English, both packs remain present; B's full name and
 description display in the picker.
 
-![Final English composition](evidence/en-final-b.png)
+![Final English composition](evidence/en-final-b.jpg)
 
 After: final DLL, German Extreme, `Größe` and `Öl & Spaß` remain correctly
 encoded. The small player-list column clips long names in both baseline and
 fixed versions; the picker displays them fully. No layout behavior changed.
 
-![Final German Extreme composition](evidence/de-extreme-final-b.png)
+![Final German Extreme composition](evidence/de-extreme-final-b.jpg)
 
 After Extreme save/load and mission restart, both entries remain in setup.
 
-![German Extreme after lifecycle checks](evidence/de-extreme-final-return-setup.png)
+![German Extreme after lifecycle checks](evidence/de-extreme-final-return-setup.jpg)
 
 ## Artifact identity and costs
 
