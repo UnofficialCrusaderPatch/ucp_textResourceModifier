@@ -43,3 +43,14 @@ head, language, pack order, screenshots, display size/scaling and enabled Legacy
 options. Repeat a fresh start, new match, save/load and restart on SHC and
 Extreme. Existing AI pack integration requires separate tests of its reset and
 language fallback paths; these minimal fixtures alone do not prove it.
+
+## Locale coverage
+
+Descriptions cover all nine GUI locales: `ch`, `de`, `en`, `es`, `fa`, `fr`,
+`hu`, `ru`, `tr`, including the catalog's `ch` identifier. The `encodings` host
+test checks representative CP1252, CP1250, CP1251, CP1254, CP936 and CP1256 bytes
+across repeated initialization. This is conversion coverage, not proof that
+every native executable or font supports those languages. Game-language
+selection remains separate from GUI description selection. Human translation
+review and native font/layout checks outside English/German remain outstanding.
+No English fallback is described as a translation.

@@ -124,12 +124,35 @@ void benchmark() {
     << " lookup_1000000_us=" << std::chrono::duration_cast<std::chrono::microseconds>(read-registered).count()
     << " checksum=" << result << '\n';
 }
+void encodings() {
+  const struct { int page; const char* utf8; const char* bytes; } samples[] = {
+    {1252, "English %s %d", "English %s %d"},
+    {1252, u8"Größe", "\x47\x72\xf6\xdf\x65"},
+    {1252, u8"français", "\x66\x72\x61\x6e\xe7\x61\x69\x73"},
+    {1252, u8"español", "\x65\x73\x70\x61\xf1\x6f\x6c"},
+    {1250, u8"árvíztűrő", "\xe1\x72\x76\xed\x7a\x74\xfb\x72\xf5"},
+    {1251, u8"Русский", "\xd0\xf3\xf1\xf1\xea\xe8\xe9"},
+    {1254, u8"Türkçe ıİşğ", "\x54\xfc\x72\x6b\xe7\x65\x20\xfd\xdd\xfe\xf0"},
+    {936, u8"中文", "\xd6\xd0\xce\xc4"},
+    {1256, u8"فارسي", "\xdd\xc7\xd1\xd3\xed"},
+  };
+  NativeManager manager;
+  for (const auto& sample : samples) {
+    codepage = sample.page;
+    initialize(manager);
+    check(SetText(600, 20, sample.utf8), "locale registration");
+    equals(600, 20, sample.bytes, "locale encoded bytes");
+    initialize(manager);
+    equals(600, 20, sample.bytes, "locale reload bytes");
+  }
+}
 }
 void ucp_log(ucp_NamedVerbosity, const char*) { ++warnings; }
 int main(int argc, char** argv) {
   try {
     if (argc == 2 && strcmp(argv[1], "reload") == 0) reload();
     else if (argc == 2 && strcmp(argv[1], "benchmark") == 0) benchmark();
+    else if (argc == 2 && strcmp(argv[1], "encodings") == 0) encodings();
     else composition();
     std::cout << "PASS " << checks << " checks\n";
     return 0;
