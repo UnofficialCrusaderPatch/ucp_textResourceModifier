@@ -22,7 +22,12 @@ private:
 
   inline static TextHandler* textManagerPtr{ nullptr }; // used to get text using this module
   inline static int gameCodepage{};
-  inline static std::unordered_map<int, std::string> stringMap{};
+  struct TextEntry
+  {
+    std::string utf8;
+    std::string encoded;
+  };
+  inline static std::unordered_map<int, TextEntry> stringMap{};
 
 public:
 

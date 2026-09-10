@@ -17,6 +17,54 @@ If a string was registered for it, the custom string is returned, otherwise it f
 
 The API to register strings expects UTF-8 and transforms it to the current encoding of the game.
 
+### Composition and lifetime
+
+Use the existing per-entry API from a trusted module; it is not exported to
+sandboxed plugins. There is no JSON text-pack loader in this module.
+Different `(offsetIndex, numInGroup)` entries coexist. The key packs the low
+16 bits of each number; use distinct values within that representation. Extra
+IDs are supported, but querying an unregistered extra ID delegates to the native
+handler without bounds checks. IDs are not validated against the original file.
+
+For the same entry, the last successful `SetText` call wins. Repeating a write
+returns `true`. UCP enables modules in configured load order; deferred callbacks
+and later calls can replace those startup writes. There are no pack priorities,
+ownership tokens or retained layers. `nil`/`nullptr` removes the current global
+override and restores native lookup, even if a different module wrote it. It
+does not restore the previous contributor. An empty string is an override.
+
+Version 0.3.1 retains the original UTF-8 separately from the game-encoded result,
+so repeated text initialization converts the original source each time. Early
+registrations wait for the native loader's codepage. If that codepage is zero,
+lookups stay native and registrations wait for a later valid initialization.
+An actual conversion failure logs the existing diagnostic and removes that
+entry during initialization; a failed immediate replacement leaves the old
+entry intact and returns `false`.
+
+Conversion uses Windows' existing substitution behavior: malformed UTF-8 and
+characters absent from the selected codepage may be replaced, not rejected.
+English and German use the native game's codepage, not the launcher language.
+`GetLanguage()` is the current `(6, 0)` text lookup, normally `American` or
+`German`; overriding that entry also overrides the API result. Changing a
+launcher locale does not select a different `cr.tex` or re-register translated
+strings. C strings are NUL terminated; embedded NULs in Lua strings are truncated
+by the existing C-string API. Lua also accepts numbers where `lua_isstring`
+allows conversion. These compatibility behaviors are unchanged.
+
+Copy C `GetText` results if retaining them across replacement, removal or text
+initialization. Unrelated insertions do not invalidate an override's pointer.
+Native pointers retain the native resource's lifetime. `TransformText`'s C
+callback pointer lasts only for that callback; Lua results are copied strings.
+The API is intended for the game's existing single-threaded callbacks.
+
+Module disabling is not implemented. Registrations belong to the process;
+there is no general dynamic pack-unload, automatic save restoration or live
+language-switching contract. AI Swapper explicitly writes and clears its AI
+entries, including nil for missing fields. Coordinate shared IDs with it.
+The original `cr.tex` is never written by this module. See
+[acceptance tests and native fixtures](tests/README.md) for reproducible checks
+and the distinction between host tests and game acceptance.
+
 
 ### Usage
 

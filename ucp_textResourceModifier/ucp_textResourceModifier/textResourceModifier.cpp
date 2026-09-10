@@ -23,14 +23,14 @@ bool TextHandler::SetText(int offsetIndex, int numInGroup, const char* utf8Str)
 
     if (!gameCodepage)  // simply construct string
     {
-      auto res{ stringMap.try_emplace(mapIndex, utf8Str) };
+      auto res{ stringMap.try_emplace(mapIndex, TextEntry{ utf8Str, {} }) };
       return res.second;  // if insertion happend
     }
 
     std::string tempStr;
     if (TransformUTF8ToSHCLocale(utf8Str, tempStr))
     {
-      auto res{ stringMap.try_emplace(mapIndex, std::move(tempStr)) };  // moves the string, since we do not need it here any more
+      auto res{ stringMap.try_emplace(mapIndex, TextEntry{ utf8Str, std::move(tempStr) }) };
       return res.second;  // if insertion happend
     }
     return false; // do nothing, since no conversion
@@ -46,12 +46,18 @@ bool TextHandler::SetText(int offsetIndex, int numInGroup, const char* utf8Str)
 
   if (!gameCodepage)  // simply assign string
   {
-    iter->second = utf8Str;
+    iter->second.utf8 = utf8Str;
     return true;  // if insertion happend
   }
 
-  // true if changed, false else -> string is only modified if transform successful
-  return TransformUTF8ToSHCLocale(utf8Str, iter->second);
+  // Retain the source only when the replacement succeeds.
+  std::string source{ utf8Str };
+  if (!TransformUTF8ToSHCLocale(source.c_str(), iter->second.encoded))
+  {
+    return false;
+  }
+  iter->second.utf8 = std::move(source);
+  return true;
 }
 
 
@@ -152,13 +158,14 @@ void __thiscall TextHandler::interceptedLoadCRTex()
   if (!gameCodepage)
   {
     Log(LOG_ERROR, "[textResourceModifier]: Failed to get games codepage. No text changes will be applied.");
+    return;
   }
 
   // transform all given strings so far
   auto it = stringMap.begin();
   while (it != stringMap.end())
   {
-    if (TransformUTF8ToSHCLocale(it->second.c_str(), it->second))
+    if (TransformUTF8ToSHCLocale(it->second.utf8.c_str(), it->second.encoded))
     {
       ++it;
     }
@@ -181,7 +188,7 @@ const char* __thiscall TextHandler::getMapText(int offsetIndex, int numInGroup)
   int mapIndex{ (offsetIndex << 16) | (numInGroup & 0x0000FFFF) };  // offset is higher order short, number in group lower (I think)
 
   auto iter{ stringMap.find(mapIndex) };
-  return (iter == stringMap.end()) ? this->getNativeText(offsetIndex, numInGroup) : iter->second.c_str();
+  return (iter == stringMap.end()) ? this->getNativeText(offsetIndex, numInGroup) : iter->second.encoded.c_str();
 }
 
 
