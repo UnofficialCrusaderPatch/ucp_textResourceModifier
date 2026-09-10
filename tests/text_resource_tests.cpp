@@ -34,17 +34,28 @@ void initialize(NativeManager& manager) {
 void equals(int group, int index, const char* expected, const char* label) {
   check(strcmp(GetText(group, index), expected) == 0, label);
 }
+void __stdcall copyTransformed(const char* text, void* output) {
+  *static_cast<std::string*>(output) = text;
+}
 void composition() {
   check(SetText(79, 385, u8"Pack A: Größe %s"), "early A registration");
   check(SetText(79, 386, u8"Pack B: château %d"), "early B registration");
   check(SetText(80, 385, "separate group"), "same index in another group");
   check(SetText(600, 700, "extra ID"), "extra IDs remain supported");
+  check(strcmp(GetLanguage(), "ERROR: NO TEXT RESOURCE YET LOADED.") == 0, "language unavailable before initialization");
   NativeManager manager;
   initialize(manager);
   equals(79, 385, "Pack A: Gr\xf6\xdf" "e %s", "A survives composition");
   equals(79, 386, "Pack B: ch\xe2teau %d", "B survives composition");
   equals(80, 385, "separate group", "group/index identity");
   equals(600, 700, "extra ID", "extra ID lookup");
+  check(strcmp(GetLanguage(), nativeText) == 0, "language reads native entry");
+  check(SetText(6, 0, "language override"), "language entry can be overridden");
+  check(strcmp(GetLanguage(), "language override") == 0, "existing language lookup semantics");
+  check(SetText(6, 0, nullptr), "restore native language entry");
+  std::string transformed;
+  TransformText(u8"Größe", copyTransformed, &transformed);
+  check(transformed == "Gr\xf6\xdf" "e", "C TransformText callback copy");
   const char* retained = GetText(79, 385);
   for (int i = 0; i < 2000; ++i) SetText(601, i, "rehash");
   check(retained == GetText(79, 385), "unrelated insertions preserve pointer");
@@ -104,6 +115,7 @@ void reload() {
   codepage = 0;
   initialize(manager);
   equals(79, 385, nativeText, "unknown codepage falls back to native");
+  check(TextHandler::TransformText(u8"Größe") == "ERROR: NO TEXT RESOURCE YET LOADED.", "unknown game codepage must not use system encoding");
   codepage = 1252;
   initialize(manager);
   equals(79, 385, "Gr\xf6\xdf" "e f\xfcr \xd6l %s", "recover from unknown codepage");

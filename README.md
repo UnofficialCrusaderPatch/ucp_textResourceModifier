@@ -37,6 +37,8 @@ Version 0.3.1 retains the original UTF-8 separately from the game-encoded result
 so repeated text initialization converts the original source each time. Early
 registrations wait for the native loader's codepage. If that codepage is zero,
 lookups stay native and registrations wait for a later valid initialization.
+`TransformText` returns the existing not-loaded error until the game codepage
+is available; it does not fall back to the Windows system encoding.
 An actual conversion failure logs the existing diagnostic and removes that
 entry during initialization; a failed immediate replacement leaves the old
 entry intact and returns `false`.

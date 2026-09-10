@@ -1,5 +1,8 @@
 # Text resource acceptance
 
+See [recorded R042 results and native captures](RESULTS.md) for the tested
+artifacts, actual coverage and remaining limitations.
+
 Build the actual production implementation in an x86 Windows test host:
 
 ```powershell
@@ -15,9 +18,10 @@ compatibility. Each test is a fresh process.
 
 `composition` covers disjoint and colliding entries, separate group identity,
 extra IDs, registration results, native restoration, empty/long/invalid text,
-Windows substitution and Lua argument compatibility. `reload` exercises the
+Windows substitution, GetLanguage overrides, C callbacks and Lua argument
+compatibility. `reload` exercises the
 production interceptor repeatedly, including late registrations, different
-codepages, unavailable encoding and conversion failure. It is a regression for
+codepages, unavailable encoding (including TransformText) and conversion failure. It is a regression for
 re-converting already encoded text, not a claim of supported live language switching.
 
 ## Native fixture packs
@@ -62,3 +66,15 @@ that this matches `GetLanguage()`. Production callers should choose localized
 content using the loaded game language (as opposed to the GUI language) after
 initialization. `SetText` converts supplied content; it does not translate it or
 select a language catalog automatically.
+
+For native consumer checks, enable the released AI Swapper and its dependencies
+before the two fixtures and set `consumers: true` in B. Configure AI Swapper's
+Snake `lines` entry with `active: true`,
+using root `ucp/modules/text-fixture-b-1.0.0/resources/ai`, name `R042`, and
+language `en` or `de` matching the game. The real consumer's configured callback
+then writes Snake and clears its missing title field's early override before B checks the results
+and restores B's display fixture. This uses the normal configuration path;
+direct exported consumer API calls are a separate compatibility concern.
+These test resources intentionally contain only English/German data and are not
+part of the shipped module. Include the precise tested Legacy options in the
+run record; passing with one option does not establish every option combination.

@@ -8,6 +8,9 @@ exports.enable = function(self, config)
   assert(text:SetText(250, index, b))
   assert(text:SetText(79, config.conflict and 239 or 248, b))
   assert(text:SetText(79, config.conflict and 385 or 386, b))
+  if config.consumers then
+    assert(text:SetText(79, 249, "temporary Snake title"))
+  end
   hooks.registerHookCallback("afterInit", function()
     local function check(value, label)
       assert(value, "R042: " .. label)
@@ -28,6 +31,17 @@ exports.enable = function(self, config)
     local long = string.rep("Äöüß ", 1000) .. "%s %d"
     check(text:SetText(600, 11, long), "long UTF-8 write")
     check(text:GetText(600, 11) == text:TransformText(long), "long conversion/placeholders")
+    if config.consumers then
+      -- The real consumer's configured callback runs before this callback.
+      check(text:GetText(79, 248) == text:TransformText(german and "Prüfung" or "Fixture"), "native AI Swapper localized write")
+      local restored = text:GetText(79, 249)
+      check(restored ~= "temporary Snake title", "native AI Swapper missing-field clear")
+      check(text:SetText(79, 249, nil) and text:GetText(79, 249) == restored, "consumer clear restores native lookup")
+      if not config.conflict then
+        check(text:SetText(79, 248, b), "restore pack B after consumer reset")
+        check(text:SetText(79, 386, b), "restore pack B description")
+      end
+    end
     log(INFO, "R042 NATIVE FIXTURE COMPLETE")
   end)
 end

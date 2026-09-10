@@ -73,7 +73,7 @@ const char* TextHandler::GetText(int offsetIndex, int numInGroup)
 
 std::string TextHandler::TransformText(const char* utf8Str)
 {
-  if (!textManagerPtr)
+  if (!textManagerPtr || !gameCodepage)
   {
     Log(LOG_WARNING, "[textResourceModifier]: Unable to transform text. CRTex not yet loaded.");
     return "ERROR: NO TEXT RESOURCE YET LOADED.";
