@@ -50,6 +50,8 @@ void composition() {
   check(retained == GetText(79, 385), "unrelated insertions preserve pointer");
   check(SetText(79, 385, u8"Pack B: für Öl"), "late conflicting write succeeds");
   equals(79, 385, "Pack B: f\xfcr \xd6l", "last successful write wins");
+  check(SetText(79, 385, u8"Pack A: Größe %s"), "reverse registration order");
+  equals(79, 385, "Pack A: Gr\xf6\xdf" "e %s", "A wins when called after B");
   check(SetText(79, 385, "repeat") && SetText(79, 385, "repeat"), "repeat succeeds");
   check(SetText(79, 385, nullptr), "clear succeeds");
   equals(79, 385, nativeText, "clear restores native, not displaced pack");

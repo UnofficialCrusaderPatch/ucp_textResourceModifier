@@ -4,16 +4,19 @@ exports.enable = function(self, config)
   local german = config.language == "de"
   local a = german and "A: Größe" or "A: New game"
   local b = german and "B: Öl & Spaß" or "B: Multiplayer"
-  local index = config.conflict and 1 or 2
-  assert(text:SetText(5, index, b))
+  local index = config.conflict and 0 or 1
+  assert(text:SetText(250, index, b))
+  assert(text:SetText(79, config.conflict and 239 or 248, b))
+  assert(text:SetText(79, config.conflict and 385 or 386, b))
   hooks.registerHookCallback("afterInit", function()
     local function check(value, label)
       assert(value, "R042: " .. label)
       log(INFO, "R042 PASS: " .. label)
     end
     check(text:GetLanguage() == (german and "German" or "American"), "native game language")
-    check(text:GetText(5, index) == text:TransformText(b), "pack B encoded text")
-    check(text:GetText(5, 1) == text:TransformText(config.conflict and b or a), "composition/conflict")
+    check(text:GetText(250, index) == text:TransformText(b), "pack B encoded text")
+    check(text:GetText(250, 0) == text:TransformText(config.conflict and b or a), "composition/conflict")
+    check(text:GetText(79, 239) == text:TransformText(config.conflict and b or a), "AI name composition/conflict")
     check(text:GetText(600, 10) == "A: %s %d", "unaffected pack A extra ID/placeholders")
     local original = text:GetText(4, 0)
     check(text:SetText(4, 0, "temporary"), "late write")

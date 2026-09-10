@@ -34,7 +34,8 @@ The packs register before native initialization; B checks encoded values,
 native language, restoration, extra IDs, empty/long text and placeholders in
 `afterInit`. Check logs for every PASS and `R042 NATIVE FIXTURE COMPLETE`;
 callback errors are logged by the framework and do not terminate the game.
-Inspect the single/multiplayer menu labels visually, including German accents.
+Inspect Rat/Snake names and descriptions in custom skirmish setup, including
+German accents. API assertions alone do not establish visible text coverage.
 The fixtures intentionally add test text only; do not ship them in the module.
 
 Use separately obtained, unmodified English/German `cr.tex` files. The fixtures
@@ -54,3 +55,10 @@ every native executable or font supports those languages. Game-language
 selection remains separate from GUI description selection. Human translation
 review and native font/layout checks outside English/German remain outstanding.
 No English fallback is described as a translation.
+
+The early-registration fixtures use an explicit language setting because the
+game language is unavailable before text initialization. The callback verifies
+that this matches `GetLanguage()`. Production callers should choose localized
+content using the loaded game language (as opposed to the GUI language) after
+initialization. `SetText` converts supplied content; it does not translate it or
+select a language catalog automatically.
