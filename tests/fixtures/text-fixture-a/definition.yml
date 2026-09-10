@@ -1,8 +1,0 @@
-name: text-fixture-a
-version: 1.0.0
-author: UCP contributors
-type: module
-meta:
-  version: 1.0.0
-dependencies:
-  textResourceModifier: ">= 0.3.0"

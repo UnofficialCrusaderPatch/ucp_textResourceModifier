@@ -64,8 +64,7 @@ there is no general dynamic pack-unload, automatic save restoration or live
 language-switching contract. AI Swapper explicitly writes and clears its AI
 entries, including nil for missing fields. Coordinate shared IDs with it.
 The original `cr.tex` is never written by this module. See
-[acceptance tests and native fixtures](tests/README.md) for reproducible checks
-and the distinction between host tests and game acceptance.
+[regression tests](tests/README.md) for reproducible checks and their limits.
 
 
 ### Usage

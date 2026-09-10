@@ -3,7 +3,6 @@
 #include <cstring>
 #include <iostream>
 #include <stdexcept>
-#include <chrono>
 
 namespace {
 int warnings = 0;
@@ -125,19 +124,6 @@ void reload() {
   equals(79, 385, nativeText, "failed initialization removes override");
   check(!SetText(79, 385, "bad codepage"), "failed registration returns false");
 }
-void benchmark() {
-  NativeManager manager;
-  initialize(manager);
-  const auto start = std::chrono::steady_clock::now();
-  for (int i = 0; i < 10000; ++i) SetText(600, i, u8"Größe für Öl %s");
-  const auto registered = std::chrono::steady_clock::now();
-  volatile size_t result = 0;
-  for (int i = 0; i < 1000000; ++i) result += GetText(600, i % 10000)[0];
-  const auto read = std::chrono::steady_clock::now();
-  std::cout << "register_10000_us=" << std::chrono::duration_cast<std::chrono::microseconds>(registered-start).count()
-    << " lookup_1000000_us=" << std::chrono::duration_cast<std::chrono::microseconds>(read-registered).count()
-    << " checksum=" << result << '\n';
-}
 void encodings() {
   const struct { int page; const char* utf8; const char* bytes; } samples[] = {
     {1252, "English %s %d", "English %s %d"},
@@ -165,7 +151,6 @@ void ucp_log(ucp_NamedVerbosity, const char*) { ++warnings; }
 int main(int argc, char** argv) {
   try {
     if (argc == 2 && strcmp(argv[1], "reload") == 0) reload();
-    else if (argc == 2 && strcmp(argv[1], "benchmark") == 0) benchmark();
     else if (argc == 2 && strcmp(argv[1], "encodings") == 0) encodings();
     else composition();
     std::cout << "PASS " << checks << " checks\n";
