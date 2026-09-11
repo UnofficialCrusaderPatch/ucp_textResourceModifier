@@ -1,0 +1,43 @@
+name: Text resource tests
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure production-code test host
+        run: cmake -S tests -B build-tests -A Win32
+      - name: Build and test
+        run: |
+          cmake --build build-tests --config Release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ctest --test-dir build-tests -C Release --output-on-failure
+      - uses: microsoft/setup-msbuild@v2
+      - name: Fetch pinned framework SDK
+        run: |
+          Invoke-WebRequest https://github.com/UnofficialCrusaderPatch/UnofficialCrusaderPatch3/releases/download/v3.0.7/UCP3-3.0.7-77c6accf14-nupkg.zip -OutFile sdk.zip
+          if ((Get-FileHash sdk.zip).Hash -ne '3CFEC624DFE04F4683F53363FF2A3339E684BE9BF0E791ACE9AECA5883DA5859') { throw 'SDK archive hash mismatch' }
+          Expand-Archive sdk.zip sdk
+      - name: Build installable module
+        run: |
+          msbuild ucp_textResourceModifier/ucp_textResourceModifier.sln /t:Restore /p:Configuration=Release /p:Platform=x86 /p:RestoreAdditionalProjectSources="$PWD/sdk" /verbosity:minimal
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          msbuild ucp_textResourceModifier/ucp_textResourceModifier.sln /p:Configuration=Release /p:Platform=x86 /verbosity:minimal
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          New-Item -ItemType Directory artifact/module | Out-Null
+          Copy-Item ucp_textResourceModifier/Release/textResourceModifier.dll,init.lua,definition.yml artifact/module
+          Copy-Item locale artifact/module -Recurse
+          Compress-Archive artifact/module/* artifact/textResourceModifier-0.3.1.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: textResourceModifier-test-package
+          path: artifact/textResourceModifier-0.3.1.zip

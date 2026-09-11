@@ -119,8 +119,9 @@ void reload() {
   initialize(manager);
   equals(79, 385, "Gr\xf6\xdf" "e f\xfcr \xd6l %s", "recover from unknown codepage");
   codepage = 99999;
+  const int warningsBeforeFailure = warnings;
   initialize(manager);
-  check(warnings > 0, "conversion failure logged");
+  check(warnings > warningsBeforeFailure, "conversion failure logged");
   equals(79, 385, nativeText, "failed initialization removes override");
   check(!SetText(79, 385, "bad codepage"), "failed registration returns false");
 }
