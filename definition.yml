@@ -1,7 +1,10 @@
 name: textResourceModifier
 display-name: Text Resource Modifier
-version: 0.3.0
+version: 0.3.1
 author: TheRedDaemon
 meta:
   version: 1.0.0
 type: module
+tags:
+- interface
+- tools
