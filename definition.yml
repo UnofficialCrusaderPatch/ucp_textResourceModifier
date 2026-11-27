@@ -1,6 +1,6 @@
 name: textResourceModifier
 display-name: Text Resource Modifier
-version: 0.4.0
+version: 0.3.2
 author: TheRedDaemon
 dependencies:
   framework: ">=3.0.8"

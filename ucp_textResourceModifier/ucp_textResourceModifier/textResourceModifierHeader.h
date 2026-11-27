@@ -16,7 +16,7 @@ namespace TextResourceModifierHeader
   using FuncTransformText = void(__stdcall*)(const char* utf8Str, FuncTextReceiver receiver, void* misc);
   using FuncGetLanguage = const char*(__stdcall*)();
 
-  inline constexpr char const* NAME_VERSION{ "0.4.0" };
+  inline constexpr char const* NAME_VERSION{ "0.3.2" };
   inline constexpr char const* NAME_MODULE{ "textResourceModifier" };
   inline constexpr char const* NAME_LIBRARY{ "textResourceModifier.dll" };
 
