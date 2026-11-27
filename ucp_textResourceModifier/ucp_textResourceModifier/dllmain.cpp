@@ -17,10 +17,8 @@ extern "C" __declspec(dllexport) int __cdecl luaopen_textResourceModifier(lua_St
   lua_pushinteger(L, *(DWORD*)&memberFuncPtr);
   lua_setfield(L, -2, "funcAddress_InterceptedLoadCRTex");
 
-  // replace at start of func and jump to this
-  auto memberFuncPtr2{ &TextHandler::getMapText };
-  lua_pushinteger(L, *(DWORD*)&memberFuncPtr2);
-  lua_setfield(L, -2, "funcAddress_GetMapText");
+  lua_pushinteger(L, reinterpret_cast<DWORD>(&TextHandler::getMappedText));
+  lua_setfield(L, -2, "funcAddress_GetMappedText");
 
   // address
   lua_pushinteger(L, (DWORD)&TextHandler::realLoadCRTFunc);

@@ -67,16 +67,13 @@ function exports:loadTextFile(folder, indexStride)
   end)
 end
 
-local function getAddress(aob, errorMsg, modifierFunc)
-  local address = core.AOBScan(aob, 0x400000)
+local function getAddress(aob, errorMsg)
+  local address, reason = core.AOBScanUnique(aob)
   if address == nil then
-    log(ERROR, errorMsg)
+    log(ERROR, errorMsg .. " (" .. reason .. ")")
     error("'textResourceModifier' can not be initialized.")
   end
-  if modifierFunc == nil then
-    return address;
-  end
-  return modifierFunc(address)
+  return address
 end
 
 --[[ Main Func ]]--
@@ -89,7 +86,11 @@ exports.enable = function(self, moduleConfig, globalConfig)
     "8b 44 24 04 8d 50 fb",
     "'textResourceModifier' was unable to find the start of the address that selects the right text strings."
   )
-  local backJmpAddress = getTextFuncStart + 7 -- address to jmp back to
+
+  local mappedTextLookup = getAddress(
+    "85 d2 8b 84 81 4c 13 00 00 8d 84 08 5c 17 00 00 5e 7e ? 8a 08",
+    "'textResourceModifier' was unable to find the mapped text lookup."
+  )
   
   local callToLoadCRTexFunc = getAddress(
     "e8 ? ? ? ff e8 ? ? ? ff 6a 08",
@@ -114,17 +115,8 @@ exports.enable = function(self, moduleConfig, globalConfig)
 
   --[[ modify code ]]--
   
-  -- write the jmp to the own function
-  core.writeCode(
-    getTextFuncStart,
-    {0xE9, requireTable.funcAddress_GetMapText - getTextFuncStart - 5}  -- jmp to func
-  )
-  
-  -- give return jump address to the dll
-  core.writeCode(
-    requireTable.address_ToNativeTextAddr,
-    {backJmpAddress}
-  )
+  core.writeInteger(requireTable.address_ToNativeTextAddr, getTextFuncStart)
+  core.insertCode(mappedTextLookup, 9, { core.callTo(requireTable.funcAddress_GetMappedText) }, nil, "after")
   
   -- gives the address of crusaders CRTex load func
   core.writeCode(
