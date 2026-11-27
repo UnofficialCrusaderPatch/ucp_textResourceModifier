@@ -19,8 +19,20 @@ local function isTextSlot(value)
 end
 
 function exports:loadTextFile(folder, indexStride)
-  indexStride = indexStride or 1
-  assert(indexStride == 1 or indexStride == 2, "indexStride must be 1 or 2")
+  if type(folder) ~= "string" then
+    log(ERROR, "Text Resource Modifier: loadTextFile folder must be a string.")
+    return
+  end
+  if indexStride == nil then
+    indexStride = 1
+  elseif type(indexStride) ~= "number" then
+    log(ERROR, "Text Resource Modifier: loadTextFile indexStride must be a number.")
+    return
+  elseif indexStride ~= 1 and indexStride ~= 2 then
+    log(WARNING, "Text Resource Modifier: invalid indexStride; using native indexes (1).")
+    indexStride = 1
+  end
+  if self.SetText == nil then return end
   hooks.registerHookCallback("afterInit", function()
     local language = data.version.getGameLanguage()
     if not language then return end
@@ -45,7 +57,7 @@ function exports:loadTextFile(folder, indexStride)
     for i, record in ipairs(records) do
       local label = string.format("%s: record %d: ", path, i)
       if getmetatable(record) ~= object then
-        log(WARNING, label .. "expected an object")
+        log(ERROR, label .. "expected an object")
       else
         local group, index, text = record.group, record.index, record.text
         if (group ~= nil and type(group) ~= "number")
@@ -67,11 +79,10 @@ function exports:loadTextFile(folder, indexStride)
   end)
 end
 
-local function getAddress(aob, errorMsg)
+local function getAddress(aob, binding)
   local address, reason = core.AOBScanUnique(aob)
   if address == nil then
-    log(ERROR, errorMsg .. " (" .. reason .. ")")
-    error("'textResourceModifier' can not be initialized.")
+    log(ERROR, string.format("Text Resource Modifier is off. The %s was %s.", binding, reason))
   end
   return address
 end
@@ -84,23 +95,27 @@ exports.enable = function(self, moduleConfig, globalConfig)
 
   local getTextFuncStart = getAddress(
     "8b 44 24 04 8d 50 fb",
-    "'textResourceModifier' was unable to find the start of the address that selects the right text strings."
+    "native text lookup"
   )
+  if getTextFuncStart == nil then return end
 
   local mappedTextLookup = getAddress(
     "85 d2 8b 84 81 4c 13 00 00 8d 84 08 5c 17 00 00 5e 7e ? 8a 08",
-    "'textResourceModifier' was unable to find the mapped text lookup."
+    "mapped text lookup"
   )
+  if mappedTextLookup == nil then return end
   
   local callToLoadCRTexFunc = getAddress(
     "e8 ? ? ? ff e8 ? ? ? ff 6a 08",
-    "'textResourceModifier' was unable to find the call to load the CRTex file."
+    "CRTex loading call"
   )
+  if callToLoadCRTexFunc == nil then return end
   
   local realLoadCRTexFunc = getAddress(
     "51 53 55 56 33 ed 8b f1 55 68",
-    "'textResourceModifier' was unable to find the CRTex load func."
+    "native CRTex loader"
   )
+  if realLoadCRTexFunc == nil then return end
 
   --[[ load module ]]--
   
