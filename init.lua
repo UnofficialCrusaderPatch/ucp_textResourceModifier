@@ -79,11 +79,13 @@ function exports:loadTextFile(folder, indexStride)
   end)
 end
 
+local function unavailable(binding, reason)
+  log(ERROR, string.format("Text Resource Modifier is off. The %s was %s.", binding, reason))
+end
+
 local function getAddress(aob, binding)
   local address, reason = core.AOBScanUnique(aob)
-  if address == nil then
-    log(ERROR, string.format("Text Resource Modifier is off. The %s was %s.", binding, reason))
-  end
+  if address == nil then unavailable(binding, reason) end
   return address
 end
 
@@ -116,6 +118,15 @@ exports.enable = function(self, moduleConfig, globalConfig)
     "native CRTex loader"
   )
   if realLoadCRTexFunc == nil then return end
+  local read, displacement = pcall(core.readInteger, callToLoadCRTexFunc + 1)
+  if not read or type(displacement) ~= "number" then
+    unavailable("CRTex loading call", "unreadable")
+    return
+  end
+  if callToLoadCRTexFunc + 5 + displacement ~= realLoadCRTexFunc then
+    unavailable("CRTex loading call", "redirected to another target")
+    return
+  end
 
   --[[ load module ]]--
   
