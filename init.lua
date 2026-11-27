@@ -18,7 +18,9 @@ local function isTextSlot(value)
   return value >= 0 and value <= 0xffff and value % 1 == 0
 end
 
-function exports:loadTextFile(folder)
+function exports:loadTextFile(folder, indexStride)
+  indexStride = indexStride or 1
+  assert(indexStride == 1 or indexStride == 2, "indexStride must be 1 or 2")
   hooks.registerHookCallback("afterInit", function()
     local language = data.version.getGameLanguage()
     if not language then return end
@@ -50,12 +52,15 @@ function exports:loadTextFile(folder)
           or (index ~= nil and type(index) ~= "number")
           or (text ~= nil and type(text) ~= "string") then
           log(ERROR, label .. "expected numeric group and index and string text")
-        elseif group == nil or index == nil or text == nil
-          or not isTextSlot(group) or not isTextSlot(index)
-          or text:find("\0", 1, true) or not utf8.len(text) then
-          log(WARNING, label .. "invalid group, index or text")
-        elseif not self:SetText(math.tointeger(group), math.tointeger(index), text) then
-          log(WARNING, label .. "could not apply text override")
+        else
+          local slot = index and index / indexStride
+          if group == nil or slot == nil or text == nil
+            or not isTextSlot(group) or not isTextSlot(slot)
+            or text:find("\0", 1, true) or not utf8.len(text) then
+            log(WARNING, label .. "invalid group, index or text")
+          elseif not self:SetText(math.tointeger(group), math.tointeger(slot), text) then
+            log(WARNING, label .. "could not apply text override")
+          end
         end
       end
     end
