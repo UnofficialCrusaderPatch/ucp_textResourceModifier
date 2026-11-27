@@ -68,6 +68,8 @@ The provided functions are the following:
 
 ### Lua-Exports
 
+Plugins can call `modules.textResourceModifier:loadTextFile(folder)` from `enable` with UCP 3.0.8 or newer. At startup it loads the current game language's `<language>.json` (`english.json` for English and American), a UTF-8 array of objects with zero-based `group` and `index` numbers and a `text` string.
+
 The Lua exports are parameters and functions accessible through the module object.
 
 * `bool SetText(int offsetIndex, int numInGroup, string utf8Str)`  

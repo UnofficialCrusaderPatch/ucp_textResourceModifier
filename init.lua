@@ -1,5 +1,67 @@
 local exports = {}
 
+local jsonNull = {}
+-- Preserve null records and fields for validation.
+local function preserveNull(value, key, entry)
+  rawset(value, key, entry == nil and jsonNull or entry)
+end
+
+local array = { __newindex = preserveNull }
+local object = { __newindex = preserveNull }
+local decoder = json:new({
+  strictTypes = true,
+  newArray = function(self, value) return setmetatable(value, array) end,
+  newObject = function(self, value) return setmetatable(value, object) end,
+})
+
+local function isTextSlot(value)
+  return value >= 0 and value <= 0xffff and value % 1 == 0
+end
+
+function exports:loadTextFile(folder)
+  hooks.registerHookCallback("afterInit", function()
+    local language = data.version.getGameLanguage()
+    if not language then return end
+    if language == "american" then language = "english" end
+
+    local path = folder .. "/" .. language .. ".json"
+    local opened, file = pcall(io.open, path, "rb")
+    if not opened then
+      log(WARNING, path .. ": could not open text overrides")
+      return
+    end
+    if not file then return end
+    local contents = file:read("a")
+    file:close()
+
+    local ok, records = pcall(decoder.decode, decoder, contents)
+    if not ok or getmetatable(records) ~= array then
+      log(WARNING, path .. ": expected a JSON array of text overrides")
+      return
+    end
+
+    for i, record in ipairs(records) do
+      local label = string.format("%s: record %d: ", path, i)
+      if getmetatable(record) ~= object then
+        log(WARNING, label .. "expected an object")
+      else
+        local group, index, text = record.group, record.index, record.text
+        if (group ~= nil and type(group) ~= "number")
+          or (index ~= nil and type(index) ~= "number")
+          or (text ~= nil and type(text) ~= "string") then
+          log(ERROR, label .. "expected numeric group and index and string text")
+        elseif group == nil or index == nil or text == nil
+          or not isTextSlot(group) or not isTextSlot(index)
+          or text:find("\0", 1, true) or not utf8.len(text) then
+          log(WARNING, label .. "invalid group, index or text")
+        elseif not self:SetText(math.tointeger(group), math.tointeger(index), text) then
+          log(WARNING, label .. "could not apply text override")
+        end
+      end
+    end
+  end)
+end
+
 local function getAddress(aob, errorMsg, modifierFunc)
   local address = core.AOBScan(aob, 0x400000)
   if address == nil then
@@ -85,4 +147,4 @@ end
 
 exports.disable = function(self, moduleConfig, globalConfig) error("not implemented") end
 
-return exports
+return exports, { public = { "loadTextFile" } }
