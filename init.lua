@@ -84,8 +84,11 @@ local function unavailable(binding, reason)
 end
 
 local function getAddress(aob, binding)
-  local address, reason = core.AOBScanUnique(aob)
-  if address == nil then unavailable(binding, reason) end
+  local ok, address = pcall(core.AOBScan, aob)
+  if not ok then
+    unavailable(binding, "not found")
+    return nil
+  end
   return address
 end
 
