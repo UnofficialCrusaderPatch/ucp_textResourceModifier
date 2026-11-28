@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
@@ -27,24 +28,25 @@ private:
     std::string utf8;
     std::string encoded;
   };
-  inline static std::unordered_map<int, TextEntry> stringMap{};
+  inline static std::unordered_map<std::uint32_t, TextEntry> stringMap{};
 
 public:
 
   static bool SetText(int offsetIndex, int numInGroup, const char* utf8Str);
   static const char* GetText(int offsetIndex, int numInGroup);
   static std::string TransformText(const char* utf8Str);
+  static void getMappedText();
 
   // required to set function
   // important: will not receive actual ptr to an object of this class
   void __thiscall interceptedLoadCRTex();
-  const char* __thiscall getMapText(int offsetIndex, int numInGroup);
 
 private:
 
   // logs the error, but leaves the string in an unchanged state
   static void LogTranscodingError();
   static bool TransformUTF8ToSHCLocale(const char* utf8Str, std::string& strToAssignResTo);
+  static const char* __stdcall FindOverride(int group, int index, int mappedGroup, int mappedIndex);
 
   // game called functions
   // IMPORTANT: none of these functions will receive a ptr to this class, but to the TextManager class of SHC

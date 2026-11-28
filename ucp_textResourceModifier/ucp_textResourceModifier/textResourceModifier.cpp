@@ -7,10 +7,14 @@
 #include <system_error>
 
 
+static std::uint32_t TextKey(int group, int index)
+{
+  return (static_cast<std::uint32_t>(group) << 16) | (index & 0xFFFF);
+}
 
 bool TextHandler::SetText(int offsetIndex, int numInGroup, const char* utf8Str)
 {
-  int mapIndex{ (offsetIndex << 16) | (numInGroup & 0x0000FFFF) };  // offset is higher order short, number in group lower (I think)
+  const auto mapIndex{ TextKey(offsetIndex, numInGroup) };
 
   // important -> check if valid value exists, because if not, the entry needs to be deleted again
   auto iter{ stringMap.find(mapIndex) };
@@ -68,7 +72,7 @@ const char* TextHandler::GetText(int offsetIndex, int numInGroup)
     Log(LOG_WARNING, "[textResourceModifier]: Unable to get text. CRTex not yet loaded.");
     return "ERROR: NO TEXT RESOURCE YET LOADED.";
   }
-  return textManagerPtr->getMapText(offsetIndex, numInGroup);
+  return textManagerPtr->getNativeText(offsetIndex, numInGroup);
 }
 
 std::string TextHandler::TransformText(const char* utf8Str)
@@ -178,26 +182,53 @@ void __thiscall TextHandler::interceptedLoadCRTex()
 }
 
 
-const char* __thiscall TextHandler::getMapText(int offsetIndex, int numInGroup)
+const char* __stdcall TextHandler::FindOverride(int group, int index, int mappedGroup, int mappedIndex)
 {
   if (!gameCodepage)
   {
-    return this->getNativeText(offsetIndex, numInGroup);
+    return nullptr;
   }
 
-  int mapIndex{ (offsetIndex << 16) | (numInGroup & 0x0000FFFF) };  // offset is higher order short, number in group lower (I think)
+  auto entry{ stringMap.find(TextKey(group, index)) };
+  if (entry == stringMap.end() && (group != mappedGroup || index != mappedIndex))
+  {
+    entry = stringMap.find(TextKey(mappedGroup, mappedIndex));
+  }
 
-  auto iter{ stringMap.find(mapIndex) };
-  return (iter == stringMap.end()) ? this->getNativeText(offsetIndex, numInGroup) : iter->second.encoded.c_str();
+  return entry == stringMap.end() ? nullptr : entry->second.encoded.c_str();
+}
+
+
+__declspec(naked) void TextHandler::getMappedText()
+{
+  __asm {
+    // EAX and EDX hold the mapped group and index. The game has saved ESI.
+    push eax
+    push ecx
+    push edx
+    push edx
+    push eax
+    push dword ptr [esp + 36]  // original index
+    push dword ptr [esp + 36]  // original group
+    call FindOverride
+    test eax, eax
+    jnz found
+    pop edx
+    pop ecx
+    pop eax
+    ret
+  found:
+    add esp, 16  // scratch registers and the trampoline return address
+    pop esi
+    ret 8
+  }
 }
 
 
 __declspec(naked) const char* __thiscall TextHandler::getNativeText(int offsetIndex, int numInGroup)
 {
   __asm {
-    mov eax, dword ptr[esp + 0x4] // replicate the overwritten instructions
-    lea edx, [eax + -0x5]
-    jmp toNativeTextAddr  // jump to real code
+    jmp toNativeTextAddr
   }
 }
 

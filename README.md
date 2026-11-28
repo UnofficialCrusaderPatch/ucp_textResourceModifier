@@ -68,6 +68,8 @@ The provided functions are the following:
 
 ### Lua-Exports
 
+With UCP 3.0.8 or newer, a plugin can call `modules.textResourceModifier:loadTextFile(folder, indexStride)` from `enable` to load the game language's `<language>.json` (`english.json` for English and American), a UTF-8 array of objects with zero-based `group` and `index` numbers and a `text` string. Omit `indexStride` for native indexes or pass `2` for catalogs whose exported indexes count the padding between CRTEX strings. An invalid numeric stride logs a warning and uses the default of 1.
+
 The Lua exports are parameters and functions accessible through the module object.
 
 * `bool SetText(int offsetIndex, int numInGroup, string utf8Str)`  
